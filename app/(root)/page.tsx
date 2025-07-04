@@ -14,12 +14,12 @@ async function Home() {
   const user = await getCurrentUser();
 
   const [userInterviews, allInterview] = await Promise.all([
-    getInterviewsByUserId(user?.id!),
-    getLatestInterviews({ userId: user?.id! }),
+    getInterviewsByUserId(user?.id?? (() => { throw new Error("User is null") })()),
+    getLatestInterviews({ userId: user?.id?? (() => { throw new Error("User is null") })() }),
   ]);
 
-  const hasPastInterviews = userInterviews?.length! > 0;
-  const hasUpcomingInterviews = allInterview?.length! > 0;
+  const hasPastInterviews = userInterviews?.length ?? (() => { throw new Error("User is null") })() > 0;
+  const hasUpcomingInterviews = allInterview?.length ?? (() => { throw new Error("User is null") })() > 0;
 
   return (
     <>

@@ -2,10 +2,11 @@
 
 import { auth, db } from "@/firebase/admin";
 import { cookies } from "next/headers";
-
 // Session duration (1 week)
 const SESSION_DURATION = 60 * 60 * 24 * 7;
-
+function hasCode(error: unknown): error is { code: string } {
+  return typeof error === "object" && error !== null && "code" in error;
+}
 // Set session cookie
 export async function setSessionCookie(idToken: string) {
   const cookieStore = await cookies();
@@ -49,22 +50,25 @@ export async function signUp(params: SignUpParams) {
       success: true,
       message: "Account created successfully. Please sign in.",
     };
-  } catch (error: any) {
-    console.error("Error creating user:", error);
+  } catch (error: unknown) {
+  console.error("Error creating user:", error);
 
-    // Handle Firebase specific errors
-    if (error.code === "auth/email-already-exists") {
-      return {
-        success: false,
-        message: "This email is already in use",
-      };
-    }
-
+  if (
+    error instanceof Error &&
+    hasCode(error) &&
+    error.code === "auth/email-already-exists"
+  ) {
     return {
       success: false,
-      message: "Failed to create account. Please try again.",
+      message: "This email is already in use",
     };
   }
+
+  return {
+    success: false,
+    message: "Failed to create account. Please try again.",
+  };
+}
 }
 
 export async function signIn(params: SignInParams) {
@@ -79,14 +83,14 @@ export async function signIn(params: SignInParams) {
       };
 
     await setSessionCookie(idToken);
-  } catch (error: any) {
-    console.log("");
+  } catch (error: unknown) {
+  console.error("Error signing in:", error);
 
-    return {
-      success: false,
-      message: "Failed to log into account. Please try again.",
-    };
-  }
+  return {
+    success: false,
+    message: "Failed to log into account. Please try again.",
+  };
+}
 }
 
 // Sign out user by clearing the session cookie
